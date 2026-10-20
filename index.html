@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Moe vs Romana</title>
+<title>Moe · Joe · Romana</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -48,6 +48,40 @@
     background:rgba(0,0,0,.5);border-radius:calc(var(--u)*.4);padding:calc(var(--u)*.25) calc(var(--u)*.9)}
   .tip b{color:#ffcf4a}
   kbd{font-family:inherit;background:#2b1408;border:1px solid #a0582a;border-radius:3px;padding:0 .35em;color:#fff}
+
+  /* ---------- Character select ---------- */
+  #select{background:radial-gradient(ellipse at center,rgba(60,8,0,.55),rgba(0,0,0,.88) 75%);justify-content:space-between;
+    padding:calc(var(--u)*1.2) calc(var(--u)*1.5) calc(var(--u)*1.2);--p1:#ff4a3a;--p2:#3aa0ff}
+  .sel-title{font-size:calc(var(--u)*3.6);letter-spacing:.08em;background:linear-gradient(#fffbe0,#ffd23a 50%,#d46a00);
+    -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 calc(var(--u)*.5) rgba(255,90,0,.8))}
+  .sel-row{display:flex;align-items:center;justify-content:center;gap:calc(var(--u)*1.5);width:100%}
+  .sel-side{--c:var(--p1);flex:1;max-width:calc(var(--u)*40);display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*.5);
+    background:rgba(0,0,0,.55);border:2px solid var(--c);border-radius:calc(var(--u)*.8);padding:calc(var(--u)*.8);
+    box-shadow:0 0 calc(var(--u)*1.6) color-mix(in srgb,var(--c) 45%,transparent)}
+  .sel-side[data-p="1"]{--c:var(--p2)}
+  .sel-side.locked{box-shadow:0 0 calc(var(--u)*3) var(--c),inset 0 0 calc(var(--u)*1.5) color-mix(in srgb,var(--c) 35%,transparent)}
+  .sel-side.remote{opacity:.92}
+  .sel-head{display:flex;align-items:center;gap:calc(var(--u)*.6);font-size:calc(var(--u)*1.6);letter-spacing:.1em}
+  .sel-badge{background:var(--c);color:#fff;padding:0 calc(var(--u)*.6);border-radius:calc(var(--u)*.3);text-shadow:0 1px 2px #000}
+  .sel-big{height:calc(var(--u)*17);width:auto;image-rendering:auto}
+  .sel-name{font-size:calc(var(--u)*2.6);letter-spacing:.06em;color:#fff;text-shadow:0 0 calc(var(--u)*.6) var(--c),0 2px 0 #000;line-height:1}
+  .sel-tagline{font-family:"Segoe UI",Arial,sans-serif;font-size:calc(var(--u)*.95);color:#f3d9c4;min-height:1.2em}
+  .sel-cards{display:flex;gap:calc(var(--u)*.6)}
+  .sel-card{position:relative;cursor:pointer;width:calc(var(--u)*7.4);height:calc(var(--u)*8.6);border-radius:calc(var(--u)*.4);overflow:hidden;
+    background:linear-gradient(#3a120a,#140504);border:2px solid rgba(255,190,110,.35);display:flex;flex-direction:column;align-items:center;
+    justify-content:flex-end;transition:transform .12s,border-color .12s}
+  .sel-card canvas{width:100%;flex:1;min-height:0;object-fit:contain}
+  .sel-card span{font-size:calc(var(--u)*1.05);letter-spacing:.06em;color:#ffe6c8;padding-bottom:calc(var(--u)*.15)}
+  .sel-card.on{border-color:var(--c);transform:translateY(calc(var(--u)*-.3));box-shadow:0 0 calc(var(--u)*1) var(--c)}
+  .sel-card.on::after{content:attr(data-badge);position:absolute;top:calc(var(--u)*.2);left:calc(var(--u)*.2);background:var(--c);color:#fff;
+    font-size:calc(var(--u)*.9);padding:0 calc(var(--u)*.35);border-radius:calc(var(--u)*.2);text-shadow:0 1px 2px #000}
+  .sel-side.locked .sel-card.on::before{content:"READY";position:absolute;inset:auto 0 calc(var(--u)*1.6) 0;text-align:center;font-size:calc(var(--u)*1.2);
+    color:#fff;background:color-mix(in srgb,var(--c) 75%,transparent);letter-spacing:.12em}
+  .sel-side.remote .sel-card{cursor:default}
+  .sel-help{font-family:"Segoe UI",Arial,sans-serif;font-size:calc(var(--u)*.9);color:#ffd9a8;min-height:1.3em;text-align:center}
+  .sel-vs{font-size:calc(var(--u)*4);color:#ff2a10;text-shadow:0 0 calc(var(--u)*1) #ff3000,0 calc(var(--u)*.25) 0 #300}
+  .sel-foot{display:flex;align-items:center;gap:calc(var(--u)*1.2);font-family:"Segoe UI",Arial,sans-serif;font-size:calc(var(--u)*1.1);color:#ffe9b0}
+  #selStatus{letter-spacing:.04em}
 
   /* ---------- Game over ---------- */
   #over{background:radial-gradient(ellipse at center,rgba(90,10,0,.82),rgba(0,0,0,.94) 70%);gap:calc(var(--u)*.8)}
@@ -127,7 +161,7 @@
   <button id="btnExit" class="hidden" title="Exit to menu (Esc)">✕ EXIT</button>
 
   <div id="start" class="screen">
-    <div class="title">MOE<span class="vs">VS</span>ROMANA</div>
+    <div class="title">MOE<span class="vs">·</span>JOE<span class="vs">·</span>ROMANA</div>
     <div class="subtitle">KOMBAT ARENA</div>
     <div id="menuBtns" class="menu-row">
       <button id="btnStart" class="btn" disabled>Loading…</button>
@@ -142,17 +176,39 @@
       <button id="btnNetCancel" class="small-btn grey">Cancel</button>
     </div>
     <div class="controls">
-      <div><b>MOE — PLAYER 1 (LEFT)</b>
+      <div><b>PLAYER 1 (LEFT)</b>
         <kbd>W</kbd> Jump &nbsp; <kbd>S</kbd> Crouch &nbsp; <kbd>A</kbd>/<kbd>D</kbd> Move<br>
         <kbd>L</kbd> Punch &nbsp; <kbd>K</kbd> Kick &nbsp; <kbd>J</kbd> Block (hold)<br>
-        <kbd>F</kbd> Special: Energy blast (once per round)</div>
-      <div><b>ROMANA — PLAYER 2 (RIGHT)</b>
+        <kbd>F</kbd> Special (once per round)</div>
+      <div><b>PLAYER 2 (RIGHT)</b>
         <kbd>↑</kbd> Jump &nbsp; <kbd>↓</kbd> Crouch &nbsp; <kbd>←</kbd>/<kbd>→</kbd> Move<br>
         <kbd>N</kbd>/<kbd>Num1</kbd> Punch &nbsp; <kbd>M</kbd>/<kbd>Num2</kbd> Kick &nbsp; <kbd>B</kbd>/<kbd>Num0</kbd> Block (hold)<br>
-        <kbd>V</kbd>/<kbd>Num3</kbd> Special: Heart blast (once per round)</div>
+        <kbd>V</kbd>/<kbd>Num3</kbd> Special (once per round)</div>
     </div>
     <div class="tip"><b>Punch + Kick</b> together = overhead jump attack &nbsp;•&nbsp; <b>Jump + Punch / Kick</b> = air attack toward the direction held<br>
       Kicks deal 2× punch damage &nbsp;•&nbsp; <b>Crouch</b> ducks punches &amp; specials &nbsp;•&nbsp; <b>Jump</b> clears kicks &amp; specials</div>
+  </div>
+
+  <div id="select" class="screen hidden">
+    <div class="sel-title">CHOOSE YOUR FIGHTER</div>
+    <div class="sel-row">
+      <div class="sel-side" id="selP1" data-p="0">
+        <div class="sel-head"><span class="sel-badge">P1</span><span class="sel-who">PLAYER 1</span></div>
+        <canvas class="sel-big" width="320" height="380"></canvas>
+        <div class="sel-name"></div><div class="sel-tagline"></div>
+        <div class="sel-cards"></div>
+        <div class="sel-help"></div>
+      </div>
+      <div class="sel-vs">VS</div>
+      <div class="sel-side" id="selP2" data-p="1">
+        <div class="sel-head"><span class="sel-badge">P2</span><span class="sel-who">PLAYER 2</span></div>
+        <canvas class="sel-big" width="320" height="380"></canvas>
+        <div class="sel-name"></div><div class="sel-tagline"></div>
+        <div class="sel-cards"></div>
+        <div class="sel-help"></div>
+      </div>
+    </div>
+    <div class="sel-foot"><button id="btnSelBack" class="small-btn grey">◀ Back</button><span id="selStatus"></span></div>
   </div>
 
   <div id="over" class="screen hidden">
@@ -841,10 +897,52 @@ function romanaFrame(st, f, spr) {
     default: return ['idle', 0];
   }
 }
-const CHARACTERS = [
-  { base: 'moe',    anims: MOE_ANIM,    frame: moeFrame,    idle: { speed: .045, amp: 1 }, victoryFrom: 3.8 },     // MOE: slow, small idle breathing
-  { base: 'romana', anims: ROMANA_ANIM, frame: romanaFrame, idle: { speed: .08, amp: 2.5 }, victoryFrom: 2.95 }   // her kiss starts with the slam landing
-];
+// ---------- JOE ---------- (one pose per file; a joe_jump.png is picked up automatically if added)
+const JOE_ANIM = {
+  idle:   { file: ['joe_idle.png'],                    frames: 1, h: STAND_H },
+  walk:   { file: ['joe_walk.png', 'joe_idle.png'],    frames: 1, h: STAND_H },
+  punch:  { file: ['joe_punch.png'],                   frames: 1, h: FH * 1.1 },
+  kick:   { file: ['joe_kick.png'],                    frames: 1, h: FH * 1.08 },
+  crouch: { file: ['joe_crouch.png'],                  frames: 1, h: CROUCH_H },
+  jump:   { file: ['joe_jump.png', 'joe_crouch.png'],  frames: 1, h: FH * .98 }
+};
+function joeFrame(st, f) {
+  switch (st.s) {
+    case 'walk': return [Math.sin(f.walkPh) > 0 ? 'walk' : 'idle', 0];
+    case 'crouch': return ['crouch', 0];
+    case 'punch': case 'kick': return [st.ph === 'wind' && st.k < .4 ? 'idle' : st.ph === 'recover' && st.k > .6 ? 'idle' : st.s, 0];
+    case 'airPunch': case 'special': return ['punch', 0];                   // fireball thrown from the punch pose
+    case 'airKick': case 'overhead': case 'slam': return ['kick', 0];
+    case 'jumpRise': case 'jumpApex': case 'jumpFall': return ['jump', 0];
+    default: return ['idle', 0];
+  }
+}
+
+/* ---------- ROSTER: every selectable fighter ----------
+   special: 'gun' = MOE's energy blast, 'flower' = ROMANA's heart blast, 'fire' = JOE's fireball (all share the same lane,
+   speed rules and 10 damage). Any two can meet, including mirror matches. */
+const ROSTER = {
+  moe:    { id: 'moe', name: 'MOE', base: 'moe', anims: MOE_ANIM, frame: moeFrame, idle: { speed: .045, amp: 1 }, victoryFrom: 3.8,
+            color: '#ff6a2a', special: 'gun', specialName: 'ENERGY BLAST!', hud: 'BLAST', hitWord: 'ZAPPED!', hitColor: '#ff3030', tag: 'Secret agent' },
+  joe:    { id: 'joe', name: 'JOE', base: 'joe', anims: JOE_ANIM, frame: joeFrame, idle: { speed: .06, amp: 2 }, victoryFrom: 3.8,
+            color: '#ffb000', special: 'fire', specialName: 'FIREBALL!', hud: 'FIRE', hitWord: 'BURNED!', hitColor: '#ff6a2a', tag: 'Fire ninja' },
+  romana: { id: 'romana', name: 'ROMANA', base: 'romana', anims: ROMANA_ANIM, frame: romanaFrame, idle: { speed: .08, amp: 2.5 }, victoryFrom: 2.95,
+            color: '#ff4a7a', special: 'flower', specialName: 'HEART BLAST!', hud: 'HEART', hitWord: 'HEARTBROKEN!', hitColor: '#ff4a6a', tag: 'Royal heartbreaker' }
+};
+const ROSTER_ORDER = ['moe', 'joe', 'romana'];
+const CHARACTERS = ROSTER_ORDER.map(k => ROSTER[k]);
+const SPRITES = {};   // id -> loaded animations (filled at startup)
+const SLOT_KEYS = ['F', 'NUM3/V'];
+// build the two fighters for the chosen characters (P1 left, P2 right)
+function makeFighters(p1, p2) {
+  fighters = [p1, p2].map((id, idx) => {
+    const C = ROSTER[id] || ROSTER.moe;
+    return new Fighter({ idx, name: C.name, spr: SPRITES[C.id], char: C, color: C.color, special: C.special, specialKey: SLOT_KEYS[idx], charId: C.id });
+  });
+  fighters[0].reset(STAGE_W / 2 - 280); fighters[1].reset(STAGE_W / 2 + 280);
+  MATCH.chars = [fighters[0].charId, fighters[1].charId];
+}
+const MATCH = { chars: ['moe', 'romana'] };
 
 // white background -> transparency on a canvas (no-op for pixels that are already transparent)
 function keyWhite(d, W0, H0) {
@@ -1325,7 +1423,11 @@ function renderFighter(f) {
   const a = f.action;
   // (MOE's special is drawn by his energy-charge frame + the energy-blast projectile art, so no gun prop)
   // specials are drawn by the launch frames themselves (energy / heart in the art); the old props only as a fallback
-  if (a && a.type === 'special' && !f.spr.own.launch) f.special === 'flower' ? drawFlowerHeld(g, R, a) : f.spr.projectile ? 0 : drawGun(g, R, a);
+  if (a && a.type === 'special' && !f.spr.own.launch) {
+    if (f.special === 'flower') drawFlowerHeld(g, R, a);
+    else if (f.special === 'fire') drawFireCharge(g, R, a);           // JOE: fireball gathering in his fist
+    else if (!f.spr.projectile) drawGun(g, R, a);
+  }
   if (f.blocking) drawShield(g, R);
   g.restore();
   // scene lighting: warm lava bounce from below, smoky shadow from above
@@ -1353,7 +1455,7 @@ function drawShield(g, R) {
 function drawFireCharge(g, R, a) {
   const k = a.t < 20 ? a.t / 20 : Math.max(0, 1 - (a.t - 20) / 8);
   if (k <= 0) return;
-  const x = (R.hF[0] + R.hB[0]) / 2, y = (R.hF[1] + R.hB[1]) / 2, r = 54 * k;
+  const x = R.hF[0], y = R.hF[1], r = 54 * k; // in the fighter's measured fist
   g.save(); g.globalCompositeOperation = 'lighter';
   const gr = g.createRadialGradient(x, y, 0, x, y, r);
   gr.addColorStop(0, 'rgba(255,240,180,.95)'); gr.addColorStop(.4, 'rgba(255,90,10,.7)'); gr.addColorStop(1, 'rgba(200,0,0,0)');
@@ -1466,13 +1568,15 @@ function startRound() {
   cam.x = (STAGE_W - W) / 2;
   G.fightBanner = 0; G.winnerIdx = -1; G.hitStop = 0; G.timer = 0; G.introDone = 0;
   clearBuffers();
-  if (G.round === 1) { // match start: SKY-DROP intro — both fall from high above the screen onto their marks
+  if (G.round === 1 && SKY_DROP_INTRO) { // optional SKY-DROP intro — both fall from high above the screen onto their marks
     G.phase = 'intro';
     fighters.forEach(f => { f.y = GROUND - INTRO_DROP; f.vy = 0; f.onGround = false; f.vpose = null; f.landT = 0; });
   } else { G.phase = 'countdown'; sfx.beep(); }
 }
 /* ---------- pre-fight sky-drop: fall, slam onto the ground, a short landing frame, idle, then 3-2-1-FIGHT ---------- */
 const INTRO_DROP = 1000, INTRO_LAND = 16, INTRO_HOLD = 24; // drop height (px), landing-frame time, pause before countdown
+// after character select the 3-2-1 countdown starts straight away; set true to bring back the sky-drop entrance
+const SKY_DROP_INTRO = false;
 function updateIntro() {
   G.timer++;
   for (const f of fighters) {
@@ -1533,7 +1637,7 @@ function updateVictory() {
   // 1) winner's special move (cosmetic — the opponent is already down)
   if (vt >= SPECIAL_T && !G.vSpecial) {
     G.vSpecial = true; w.action = { type: 'special', t: 0, hit: true };
-    popup(w.special === 'flower' ? 'HEART BLAST!' : 'ENERGY BLAST!', w.x, w.y - FH - 80, w.color, 48);
+    popup(w.char.specialName, w.x, w.y - FH - 80, w.color, 48);
     if (w.special === 'gun') sfx.cock();
   }
   if (w.action) { w.action.t++; if (w.action.t === ATK.special.fire) fireSpecial(w); if (w.action.t >= ATK.special.total) w.action = null; }
@@ -1689,7 +1793,7 @@ function startAction(f, type) {
   f.action = { type, t: 0, hit: false };
   if (type === 'special') {
     f.specialUsed = true;
-    popup(f.special === 'flower' ? 'HEART BLAST!' : 'ENERGY BLAST!', f.x, f.y - FH - 80, f.color, 44);
+    popup(f.char.specialName, f.x, f.y - FH - 80, f.color, 44);
     if (f.special === 'gun') sfx.cock();
   } else sfx.whoosh();
 }
@@ -1737,9 +1841,9 @@ function specialHit(p, d) {
   const a = p.owner;
   d.hp = Math.max(0, d.hp - 10);
   d.flash = 16; d.action = null; d.stun = 0;
-  starburst(p.x, p.y, 120, p.type === 'flower' ? '#ff6a8a' : '#fff6b0');
-  burst(p.x, p.y, 60, p.type === 'flower' ? ['#ff2a40', '#ff8a9a', '#ffffff', '#3aa040'] : ['#ffffff', '#fff2a0', '#ff3020', '#8a0000'], 14);
-  popup(p.type === 'flower' ? 'HEARTBROKEN!' : 'ZAPPED!', d.x, d.y - FH - 70, p.type === 'flower' ? '#ff4a6a' : '#ff3030', 50);
+  starburst(p.x, p.y, 120, p.type === 'flower' ? '#ff6a8a' : p.type === 'fire' ? '#ffb030' : '#fff6b0');
+  burst(p.x, p.y, 60, p.type === 'flower' ? ['#ff2a40', '#ff8a9a', '#ffffff', '#3aa040'] : p.type === 'fire' ? ['#fff3c0', '#ffb030', '#ff4a10', '#a00000'] : ['#ffffff', '#fff2a0', '#ff3020', '#8a0000'], 14);
+  popup(a.char.hitWord, d.x, d.y - FH - 70, a.char.hitColor, 50);
   popup('-10', d.x, d.y - FH * .7, '#ffdc5a', 40);
   sfx.boom(); G.hitStop = 10; shake(16, 22); // (no screen flash on special hits)
   knockdown(a, d, d.hp <= 0);
@@ -1763,6 +1867,10 @@ function fireSpecial(f) {
     const [x] = toWorld(f, [R.hF[0] + 30, 0]);
     projectiles.push({ type: 'flower', owner: f, x, y, vx: f.facing * 15, r: SPECIAL_HIT_R, t: 0 });
     sfx.toss();
+  } else if (f.special === 'fire') { // JOE: fireball thrown from the punching fist
+    const [x] = toWorld(f, [R.hF[0] + 30, 0]);
+    projectiles.push({ type: 'fire', owner: f, x, y, vx: f.facing * 12.5, r: SPECIAL_HIT_R, t: 0 });
+    sfx.fire();
   } else {
     const ang = Math.atan2(R.hF[1] - R.elF[1], R.hF[0] - R.elF[0]);
     const [x] = toWorld(f, [R.hF[0] + Math.cos(ang) * 110, 0]); // muzzle of the big gun
@@ -1923,6 +2031,10 @@ function updateProjectiles() {
   projectiles = projectiles.filter(p => !p.dead);
 }
 function fireTrail(p) {
+  if (p.type === 'fire') { // JOE's fireball: a stream of flames behind it
+    for (let i = 0; i < 3; i++) particles.push({ x: p.x - p.vx * rand(0, 1.5), y: p.y + rand(-18, 18), vx: -p.vx * rand(.05, .2), vy: rand(-1.5, .5), life: rand(14, 26) | 0, max: 26, size: rand(6, 14), color: Math.random() < .5 ? '#ff5a10' : '#ffb030', glow: true });
+    return;
+  }
   if (p.type !== 'flower' || p.t % 3) return;
   if (p.owner.spr && p.owner.spr.heart) { // heart blast: trail of golden sparks
     particles.push({ x: p.x - p.vx * rand(1, 2.5), y: p.y + rand(-30, 30), vx: -p.vx * rand(.05, .15), vy: rand(-1.2, .6), life: rand(16, 26) | 0, max: 26, size: rand(5, 10), color: Math.random() < .6 ? '#ffb030' : '#ff6a3a', glow: true });
@@ -2538,7 +2650,17 @@ function drawProjectiles() {
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   for (const p of projectiles) {
     const x = p.x - cam.x;
-    if (p.type === 'flower' && p.owner.spr && p.owner.spr.heart) {
+    if (p.type === 'fire') {
+      // JOE's fireball: glowing core, outer flare and spinning flame arcs
+      const R = 36 + Math.sin(p.t * .5) * 5;
+      ctx.globalAlpha = .8; ctx.drawImage(L.flare, x - R * 3, p.y - R * 3, R * 6, R * 6); ctx.globalAlpha = 1;
+      const gr = ctx.createRadialGradient(x, p.y, 0, x, p.y, R * 1.6);
+      gr.addColorStop(0, 'rgba(255,255,225,1)'); gr.addColorStop(.2, 'rgba(255,210,70,.95)');
+      gr.addColorStop(.5, 'rgba(255,60,15,.8)'); gr.addColorStop(1, 'rgba(150,0,0,0)');
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, p.y, R * 1.6, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,120,30,.8)'; ctx.lineWidth = 4;
+      for (let i = 0; i < 3; i++) { const ang = p.t * .4 + i * 2.1; ctx.beginPath(); ctx.arc(x, p.y, R * .9, ang, ang + 1.1); ctx.stroke(); }
+    } else if (p.type === 'flower' && p.owner.spr && p.owner.spr.heart) {
       // ROMANA's heart blast: the heart cut out of her launch frame 3, flying (and gently pulsing) at Moe
       const Hh = p.owner.spr.heart, dir = Math.sign(p.vx) || 1, s = 1 + .06 * Math.sin(p.t * .5);
       ctx.save(); ctx.globalAlpha = .55; ctx.drawImage(L.flare, x - 120, p.y - 120, 240, 240); ctx.restore(); // warm glow
@@ -2668,7 +2790,7 @@ function drawHUD() {
       else ctx.fillStyle = 'rgba(40,10,0,.85)';
       ctx.fill(); ctx.shadowBlur = 0; ctx.strokeStyle = '#ffcf5a'; ctx.lineWidth = 2; ctx.stroke();
     }
-    const label = (f.special === 'flower' ? 'HEART ' : 'BLAST ') + (f.specialUsed ? '— USED' : 'READY [' + f.specialKey + ']');
+    const label = f.char.hud + ' ' + (f.specialUsed ? '— USED' : 'READY [' + f.specialKey + ']');
     ctx.font = '18px Impact, "Arial Black", sans-serif';
     const tw = ctx.measureText(label).width + 22, px = left ? x + 84 : x - 84 - tw;
     ctx.fillStyle = f.specialUsed ? 'rgba(60,60,60,.8)' : (G.frame % 40 < 20 ? 'rgba(200,50,0,.9)' : 'rgba(150,30,0,.9)');
@@ -2902,7 +3024,7 @@ async function hostOnline(attempt = 0) {
       NET.role = 'host'; NET.me = 0; held[1] = {}; NET.lastRx = performance.now();
       netStatus('Opponent joined! Starting match…');
       // start straight away; the guest leaves its waiting screen on the first snapshot
-      setTimeout(() => { if (NET.conn !== conn) return; initAudio(); showNetPanel(false); startMatch(); }, 400);
+      setTimeout(() => { if (NET.conn !== conn) return; initAudio(); showNetPanel(false); openSelect('online'); }, 400); // pick fighters first
     };
     conn.on('open', begin);
     if (conn.open) begin();
@@ -2954,7 +3076,7 @@ async function joinOnline(id, relayOnly = false, attempt = 1, note = '') {
   peer.on('disconnected', () => { if (NET.peer === peer && !peer.destroyed) try { peer.reconnect(); } catch (e) {} });
   peer.on('open', () => {
     if (NET.peer !== peer) return;
-    const conn = guestConnect(peer, () => { NET.joinUntil = 0; netStatus('Connected' + (relayOnly ? ' via relay' : '') + '! You are ROMANA (right). Starting…'); });
+    const conn = guestConnect(peer, () => { NET.joinUntil = 0; netStatus('Connected' + (relayOnly ? ' via relay' : '') + '! You are Player 2 (right).'); openSelect('online'); });
     setTimeout(() => { if (NET.conn === conn && !conn.open) retry(); }, relayOnly ? RELAY_TIMEOUT : DIRECT_TIMEOUT);
   });
   peer.on('error', e => {
@@ -3005,6 +3127,7 @@ function exitToMenu(notifyPeer = true) {
   if (fighters.length) { fighters[0].reset(STAGE_W / 2 - 280); fighters[1].reset(STAGE_W / 2 + 280); }
   projectiles = []; particles = []; popups = [];
   cam.x = (STAGE_W - W) / 2;
+  closeSelect();
   $('over').classList.add('hidden'); $('start').classList.remove('hidden'); showNetPanel(false);
   updateOverlays();
 }
@@ -3063,6 +3186,13 @@ function onNetData(m) {
   if (m.t === 'full') { onNetClose('That game already has two players. Ask Player 1 for a new link.'); return; }
   if (m.t === 'vis') { NET.hostHidden = !!m.h; return; }
   if (m.t === 'resume') { NET.hostHidden = false; return; }
+  // character select: the other player's pick / lock, and (guest) the final line-up from the host
+  if (m.t === 'sel') {
+    if (m.p !== NET.me && SEL.side[m.p]) { SEL.side[m.p] = { i: m.i | 0, lock: !!m.lock }; if (SEL.open) { renderSelect(); selCheckStart(); } }
+    if (m.hello && SEL.open) sendSel(NET.me); // they just opened their select screen: tell them our current pick
+    return;
+  }
+  if (m.t === 'cfg') { if (NET.role === 'guest' && Array.isArray(m.c)) applyCfg(m.c); return; }
   if (NET.role === 'host') {
     if (m.t === 'k') { // guest input -> player 2
       if (m.d) { (held[1][m.a] = new Set(['net'])); pressedAt[1][m.a] = G.frame; }
@@ -3169,6 +3299,109 @@ function goFullscreenOnPhone() {
 }
 
 /* =====================================================================
+   CHARACTER SELECT (2 players)
+   Local: P1 picks on the left (A / D, lock with L / K / F), P2 on the right (← / →, lock with N / M / V) — or tap a
+   portrait (tap it again to unlock). Online: the host picks P1 and the guest picks P2; every pick / lock is sent to
+   the other side ({t:'sel'}), and when both are locked the host sends the line-up ({t:'cfg'}) and starts the match.
+   ===================================================================== */
+const SEL = { open: false, mode: 'local', side: [{ i: 0, lock: false }, { i: 2, lock: false }], starting: false };
+const selEls = () => [$('selP1'), $('selP2')];
+function drawPortrait(cv, id, mirror) { // the character's idle pose, fitted into the canvas, facing the middle
+  const spr = SPRITES[id]; if (!spr) return;
+  const A = spr.idle, F = A.frames[0], g = cv.getContext('2d'), k = Math.min(cv.width * .92 / F.w, cv.height * .96 / F.h);
+  g.clearRect(0, 0, cv.width, cv.height); g.save(); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  g.translate(cv.width / 2, cv.height - 4); if (mirror) g.scale(-1, 1);
+  g.drawImage(A.strip, F.sX, F.sY, F.w, F.h, -F.ax * k, -F.h * k, F.w * k, F.h * k); g.restore();
+}
+function buildSelectScreen() {
+  selEls().forEach((el, p) => {
+    const box = el.querySelector('.sel-cards'); box.innerHTML = '';
+    ROSTER_ORDER.forEach((id, i) => {
+      const card = document.createElement('div'); card.className = 'sel-card'; card.dataset.i = i; card.dataset.badge = 'P' + (p + 1);
+      const cv = document.createElement('canvas'); cv.width = 120; cv.height = 130; drawPortrait(cv, id, p === 1);
+      const name = document.createElement('span'); name.textContent = ROSTER[id].name;
+      card.append(cv, name); box.append(card);
+      const tap = e => { e.preventDefault(); initAudio(); selTap(p, i); };
+      card.addEventListener('click', tap); card.addEventListener('touchend', tap, { passive: false });
+    });
+  });
+  $('btnSelBack').onclick = () => { blurAll(); selBack(); };
+}
+const canControl = p => SEL.mode === 'local' || p === NET.me;
+function openSelect(mode) {
+  const idx = id => Math.max(0, ROSTER_ORDER.indexOf(id));
+  Object.assign(SEL, { open: true, mode, starting: false, side: [{ i: idx(MATCH.chars[0]), lock: false }, { i: idx(MATCH.chars[1]), lock: false }] });
+  $('start').classList.add('hidden'); $('over').classList.add('hidden'); showNetPanel(false); $('select').classList.remove('hidden');
+  renderSelect();
+  if (mode === 'online') sendSel(NET.me, true); // hello: the other side answers with its current pick
+}
+function closeSelect() { SEL.open = false; $('select').classList.add('hidden'); }
+function sendSel(p, hello = false) { if (SEL.mode === 'online') netSend({ t: 'sel', p, i: SEL.side[p].i, lock: SEL.side[p].lock, hello }); }
+function selMove(p, d) {
+  const s = SEL.side[p]; if (!SEL.open || SEL.starting || !canControl(p) || s.lock) return;
+  s.i = (s.i + d + ROSTER_ORDER.length) % ROSTER_ORDER.length; sfx.jump(); renderSelect(); sendSel(p);
+}
+function selLock(p, v) {
+  const s = SEL.side[p]; if (!SEL.open || SEL.starting || !canControl(p) || s.lock === v) return;
+  s.lock = v; v ? sfx.block() : sfx.whoosh(); renderSelect(); sendSel(p); selCheckStart();
+}
+function selTap(p, i) {
+  if (!canControl(p) || SEL.starting) return;
+  const s = SEL.side[p];
+  if (s.i === i && s.lock) { selLock(p, false); return; }
+  if (s.lock) s.lock = false;
+  s.i = i; renderSelect(); sendSel(p); selLock(p, true);
+}
+function selBack() {
+  if (SEL.mode === 'online') { closeSelect(); exitToMenu(); return; } // leaving the online select ends the session
+  closeSelect(); $('start').classList.remove('hidden');
+}
+// both locked: a short "READY" beat, then the fight (local, or the online host) — the guest waits for {t:'cfg'}
+function selCheckStart() {
+  if (!SEL.side[0].lock || !SEL.side[1].lock || SEL.starting) return;
+  if (SEL.mode === 'online' && NET.role !== 'host') return;
+  SEL.starting = true; renderSelect(); sfx.fight();
+  setTimeout(() => {
+    if (!SEL.open || !SEL.side[0].lock || !SEL.side[1].lock) { SEL.starting = false; renderSelect(); return; }
+    const ids = SEL.side.map(s => ROSTER_ORDER[s.i]);
+    makeFighters(ids[0], ids[1]);
+    if (SEL.mode === 'online') netSend({ t: 'cfg', c: ids });
+    closeSelect(); initAudio(); startMatch();
+  }, 750);
+}
+// online guest: the host has fixed the line-up -> build the same fighters, snapshots take it from here
+function applyCfg(ids) { makeFighters(ids[0], ids[1]); SEL.starting = true; closeSelect(); }
+function renderSelect() {
+  selEls().forEach((el, p) => {
+    const s = SEL.side[p], id = ROSTER_ORDER[s.i], C = ROSTER[id], mine = canControl(p);
+    el.classList.toggle('locked', s.lock); el.classList.toggle('remote', !mine);
+    el.querySelectorAll('.sel-card').forEach(c => c.classList.toggle('on', +c.dataset.i === s.i));
+    drawPortrait(el.querySelector('.sel-big'), id, p === 1);
+    el.querySelector('.sel-name').textContent = C.name;
+    el.querySelector('.sel-tagline').textContent = C.tag;
+    el.querySelector('.sel-who').textContent = SEL.mode === 'online' ? (mine ? 'YOU' : 'OPPONENT') : 'PLAYER ' + (p + 1);
+    el.querySelector('.sel-help').innerHTML = s.lock ? 'Locked in' + (mine ? ' — tap again to change' : '')
+      : !mine ? 'Choosing…'
+      : SEL.mode === 'online' ? '<kbd>←</kbd>/<kbd>→</kbd> or <kbd>A</kbd>/<kbd>D</kbd> choose · <kbd>Punch</kbd> or tap to lock'
+      : p === 0 ? '<kbd>A</kbd>/<kbd>D</kbd> choose · <kbd>L</kbd> lock · or tap' : '<kbd>←</kbd>/<kbd>→</kbd> choose · <kbd>N</kbd> lock · or tap';
+  });
+  const both = SEL.side[0].lock && SEL.side[1].lock;
+  $('selStatus').textContent = SEL.starting || both ? 'GET READY!'
+    : SEL.mode === 'online' && !NET.conn ? 'Connecting…' : 'Lock in both fighters to start the match';
+}
+// keyboard on the select screen (either key set works for your own side online, like in a fight)
+addEventListener('keydown', e => {
+  if (!SEL.open) return;
+  if (e.code === 'Escape') { e.preventDefault(); selBack(); return; }
+  const k = keyInfo(e); if (!k) return;
+  e.preventDefault(); e.stopImmediatePropagation(); if (e.repeat) return;
+  if (k.act === 'left') selMove(k.p, -1);
+  else if (k.act === 'right') selMove(k.p, 1);
+  else if (k.act === 'punch' || k.act === 'kick' || k.act === 'special' || k.act === 'jump') selLock(k.p, !SEL.side[k.p].lock);
+  else if (k.act === 'block' || k.act === 'crouch') selLock(k.p, false);
+}, { capture: true });
+
+/* =====================================================================
    STARTUP
    ===================================================================== */
 loadImgFile(['Moe vs Romana_Fighting Arena.png', 'Moe vs Romana_ Fiery Battle Royale.png']).then(i3 => {
@@ -3178,11 +3411,9 @@ Promise.all([loadPoses(), loadStage()]).then(([SPR]) => {
   $('btnStart').textContent = 'Forging arena…';
   setTimeout(() => {
     buildArena();
-    fighters = [ // left = MOE (big gun), right = ROMANA (flower throw)
-      new Fighter({ idx: 0, name: 'MOE', spr: SPR[0], char: CHARACTERS[0], color: '#ff6a2a', special: 'gun', specialKey: 'F' }),
-      new Fighter({ idx: 1, name: 'ROMANA', spr: SPR[1], char: CHARACTERS[1], color: '#ffd23a', special: 'flower', specialKey: 'NUM3/V' })
-    ];
-    fighters[0].reset(STAGE_W / 2 - 280); fighters[1].reset(STAGE_W / 2 + 280);
+    CHARACTERS.forEach((C, i) => { SPRITES[C.id] = SPR[i]; });
+    makeFighters('moe', 'romana');   // default line-up until the select screen sets one
+    buildSelectScreen();
     const b = $('btnStart'); b.disabled = false; b.textContent = 'Play Local';
     $('btnHost').disabled = false;
     requestAnimationFrame(loop);
@@ -3198,7 +3429,7 @@ Promise.all([loadPoses(), loadStage()]).then(([SPR]) => {
 });
 
 function blurAll() { document.activeElement && document.activeElement.blur(); }
-$('btnStart').onclick = () => { initAudio(); blurAll(); netTeardown(); goFullscreenOnPhone(); startMatch(); };
+$('btnStart').onclick = () => { initAudio(); blurAll(); netTeardown(); goFullscreenOnPhone(); openSelect('local'); };
 $('btnHost').onclick = () => { initAudio(); blurAll(); netTeardown(); goFullscreenOnPhone(); hostOnline(); };
 $('btnCopy').onclick = () => {
   const inp = $('netLink'); inp.select();
