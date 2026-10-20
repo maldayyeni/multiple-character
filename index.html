@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Moe · Joe · Romana</title>
+<title>Moe · Joe · Romana · Lulu</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -946,6 +946,52 @@ function joeFrame(st, f) {
   }
 }
 
+// ---------- LULU ---------- every sheet looks left (faces: -1) and prints captions under the frames (caption: dropped).
+// The 1774x887 sheets share one drawing scale: LULU_K maps them to the idle art's size (head-to-feet ~ STAND_H).
+const LULU_K = STAND_H / 700;
+const LULU_ANIM = {
+  idle:     { file: ['lulu_idle.png'],    frames: 1, h: STAND_H, faces: -1 },
+  walk:     { file: ['lulu_walk.png'],    frames: 4, k: LULU_K, faces: -1, caption: true },
+  jump:     { file: ['lulu_jump.png'],    frames: 4, k: LULU_K, faces: -1, caption: true },        // take-off, rise, apex, fall
+  crouch:   { file: ['lulu_crouch.png'],  frames: 3, h: CROUCH_H, fit: 2, faces: -1, caption: true }, // drop, mid, low guard (= duck)
+  punch:    { file: ['lulu_punch.png'],   frames: 4, k: LULU_K, faces: -1, caption: true },
+  kick:     { file: ['lulu_kick.png'],    frames: 4, k: LULU_K, faces: -1, caption: true },
+  // wind-up, launch, arc, catch. Frame 2 of this sheet looks the other way (mirror), and the painted shuriken
+  // wave of frames 2 + 3 is wiped (the real, flying shuriken takes over); the shuriken held in frames 1 + 4 stays
+  shuriken: { file: ['lulu_special.png'], frames: 4, k: LULU_K, faces: -1, caption: true, mirror: [1], loose: 3000,
+              erase: [{ r: [748, 280, 918, 465] }, { r: [665, 280, 748, 465], blue: true },     // frame 2: thrown wave + glow
+                      { r: [800, 80, 1400, 240] }, { r: [800, 240, 935, 360], blue: true },     // frame 3: arc over her head,
+                      { r: [1295, 190, 1392, 500], blue: true }] },                             //   down to her hand + behind her
+  block:    { file: ['lulu_block.png'],   frames: 3, k: LULU_K, faces: -1 },                         // guard, brace, guard
+  hit:      { file: ['lulu_hit.png'],     frames: 3, k: LULU_K, faces: -1, caption: true },          // impact, stagger, recover
+  ko:       { file: ['lulu_ko.png'],      frames: 3, k: LULU_K, faces: -1, caption: true },          // falling, ground impact, rest
+  victory:  { file: ['lulu_victory.png'], frames: 4, k: LULU_K, faces: -1, caption: true }           // Gangnam Style dance
+};
+const SHURIKEN = { T: 110, reach: 700, rise: 190 }; // flight time (frames), max distance out, how high the return arc climbs
+const shurikenReturning = f => projectiles.some(p => p.type === 'shuriken' && p.owner === f && p.t > SHURIKEN.T * .86);
+function luluFrame(st, f) {
+  switch (st.s) {
+    case 'walk': return ['walk', ((Math.floor(f.walkPh * .45) % 4) + 4) % 4];
+    case 'crouch': return ['crouch', 2];                                     // low ducking guard: under the special lane
+    case 'block': return ['block', f.flash > 0 ? 1 : 0];
+    case 'punch': case 'kick': return [st.s, st.ph === 'wind' ? (st.k < .5 ? 0 : 1) : st.ph === 'strike' ? 2 : 3];
+    case 'airPunch': return ['punch', 2];
+    case 'airKick': return ['kick', 2];
+    case 'overhead': return f.vy < 0 ? ['jump', 1] : ['kick', 2];
+    case 'slam': return ['kick', 2];
+    case 'jumpRise': return ['jump', 1];
+    case 'jumpApex': return ['jump', 2];
+    case 'jumpFall': return ['jump', 3];
+    case 'special': return ['shuriken', [0, 0, 1, 2][st.i]];                 // the shuriken leaves on the launch frame
+    case 'stun': return ['hit', [0, 1, 1, 2][st.i]];
+    case 'hitAir': return ['ko', 0];                                         // collapse / falling
+    case 'down': return f.knock === 'rise' ? ['crouch', 0] : ['ko', f.ko ? 2 : 1]; // on the ground; gets up through the crouch
+    case 'victory': return ['victory', st.i < 1 ? 0 : [1, 2, 3, 2][Math.floor(G.frame / 14) % 4]]; // dance loop
+    case 'defeat': return G.phase === 'roundEnd' ? ['hit', 2] : ['ko', 2];
+    default: return shurikenReturning(f) ? ['shuriken', 3] : ['idle', 0];  // catches the returning shuriken
+  }
+}
+
 /* ---------- ROSTER: every selectable fighter ----------
    special: 'gun' = MOE's energy blast, 'flower' = ROMANA's heart blast, 'fire' = JOE's fireball (all share the same lane,
    speed rules and 10 damage). Any two can meet, including mirror matches. */
@@ -955,9 +1001,12 @@ const ROSTER = {
   joe:    { id: 'joe', name: 'JOE', base: 'joe', anims: JOE_ANIM, frame: joeFrame, idle: { speed: .06, amp: 2 }, victoryFrom: 3.8,
             color: '#ffb000', special: 'fire', specialName: 'FIREBALL!', hud: 'FIRE', hitWord: 'BURNED!', hitColor: '#ff6a2a', tag: 'Fire ninja' },
   romana: { id: 'romana', name: 'ROMANA', base: 'romana', anims: ROMANA_ANIM, frame: romanaFrame, idle: { speed: .08, amp: 2.5 }, victoryFrom: 2.95,
-            color: '#ff4a7a', special: 'flower', specialName: 'HEART BLAST!', hud: 'HEART', hitWord: 'HEARTBROKEN!', hitColor: '#ff4a6a', tag: 'Royal heartbreaker' }
+            color: '#ff4a7a', special: 'flower', specialName: 'HEART BLAST!', hud: 'HEART', hitWord: 'HEARTBROKEN!', hitColor: '#ff4a6a', tag: 'Royal heartbreaker' },
+  lulu:   { id: 'lulu', name: 'LULU', base: 'lulu', anims: LULU_ANIM, frame: luluFrame, idle: { speed: .07, amp: 2 }, victoryFrom: 3.8,
+            portrait: 'lulu_portrait.png', avatar: [.36, .01, .33], lieArt: true, // select-card art; head crop [x, y, size] of it
+            color: '#4aa8ff', special: 'shuriken', specialName: 'SHURIKEN WAVE!', hud: 'SHURIKEN', hitWord: 'SLICED!', hitColor: '#3aa0ff', tag: 'Shuriken ninja' }
 };
-const ROSTER_ORDER = ['moe', 'joe', 'romana'];
+const ROSTER_ORDER = ['moe', 'joe', 'romana', 'lulu'];
 const CHARACTERS = ROSTER_ORDER.map(k => ROSTER[k]);
 const SPRITES = {};   // id -> loaded animations (filled at startup)
 const SLOT_KEYS = ['F', 'NUM3/V'];
@@ -1024,23 +1073,36 @@ function keyWhite(d, W0, H0) {
 }
 // key a file once (animations sharing a file reuse it) -> { cv: keyed canvas facing right, d: its pixels, W, H }
 const KEYED = {};
-function keyedFile(img, name, faces) {
+function keyedFile(img, name, faces, erase) {
   const key = name + '|' + faces;
   if (KEYED[key]) return KEYED[key];
   const W0 = img.naturalWidth, H0 = img.naturalHeight, cv = mk(W0, H0), g = cv.getContext('2d');
   if (faces < 0) { g.translate(W0, 0); g.scale(-1, 1); }   // normalise: every frame faces right
   g.drawImage(img, 0, 0); g.setTransform(1, 0, 0, 1, 0, 0);
   const id = g.getImageData(0, 0, W0, H0);                 // throws when opened as file:// (caller reports it)
+  if (erase) eraseRegions(id.data, W0, H0, erase, faces < 0);
   keyWhite(id.data, W0, H0);
   g.putImageData(id, 0, 0);
-  return (KEYED[key] = { cv, d: id.data, W: W0, H: H0 });
+  return (KEYED[key] = { cv, d: id.data, W: W0, H: H0, flip: faces < 0 });
+}
+// painted effects that a projectile takes over (LULU's shuriken in her throw frames), wiped before keying.
+// Rects are in the ORIGINAL file's pixels: [x0, y0, x1, y1]; blue: only the glowing blue effect pixels inside it
+// (skin, hair, the navy gloves and the white paper are kept), otherwise everything inside it goes
+function eraseRegions(d, W0, H0, list, flipped) {
+  for (const E of list) {
+    const [ax, y0, bx, y1] = E.r, x0 = flipped ? W0 - 1 - bx : ax, x1 = flipped ? W0 - 1 - ax : bx;
+    for (let y = Math.max(0, y0); y <= Math.min(H0 - 1, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(W0 - 1, x1); x++) {
+      const i = (y * W0 + x) * 4;
+      if (!E.blue || (d[i + 2] > 200 && d[i + 2] - d[i] > 50) || (d[i + 2] > 225 && d[i + 2] - d[i] > 18)) d[i + 3] = 0; // core + pale glow
+    }
+  }
 }
 // Frame slicing. Every figure in a batch is a connected shape: the n biggest shapes are the frames (left to right,
 // each frame's sX = its left edge in the file). Smaller loose pieces join a frame — a thrown effect (energy / heart,
 // see EFFECT) joins the figure on its LEFT that threw it, anything else the nearest figure. Each frame keeps only its
 // own pixels, so art that overlaps a neighbour's columns never bleeds across. If the art has fewer separate shapes
 // than frames, it falls back to equal-width slices (sX = i * width / frames).
-function sliceFrames(K, n, effect) {
+function sliceFrames(K, n, effect, caption, loose) {
   const { d, W, H } = K, N = W * H, lab = new Int32Array(N), q = new Int32Array(N), comps = [], E = effect && EFFECT[effect];
   const cls = new Uint8Array(N); // 2 = effect-coloured pixel, 1 = anything else opaque (they never join one shape)
   for (let i = 0; i < N; i++) if (d[i * 4 + 3] > 40) cls[i] = E && E.cls(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]) ? 2 : 1;
@@ -1108,7 +1170,10 @@ function sliceFrames(K, n, effect) {
     if (figs.includes(c) || c.fx) continue;
     const cx = (c.x0 + c.x1) / 2, cy = (c.y0 + c.y1) / 2;
     const hit = fxBoxes.find(([e]) => cx >= e.x0 - 8 && cx <= e.x1 + 8 && cy >= e.y0 - 8 && cy <= e.y1 + 8);
-    hit ? add(c, hit[1], true) : add(c, nearest(c), false);
+    const k = hit ? hit[1] : nearest(c);
+    if (caption && !hit && (c.y0 > figs[k].y1 - 2 || c.y1 > figs[k].y1 + 2)) continue; // caption text under the feet: dropped
+    if (loose && !hit && c.n < loose) continue;             // small specks left over from a wiped effect: dropped
+    hit ? add(c, k, true) : add(c, k, false);
   }
   return own.map(o => cutFrame(K, (x, y) => o.set.has(lab[y * W + x]), o.x0, o.y0, o.x1, o.y1, (x, y) => o.fx.has(lab[y * W + x])));
 }
@@ -1208,11 +1273,23 @@ function clearPockets(F, o) {
 }
 // keyed batch -> animation: frames cut + measured, packed side by side and resized once (gameplay + game-over size).
 // Result: { strip, big, frames: [{ sX, sY, w, h, ax, hand, foot, big: { sX, sY, w, h } }], proj? } — all in on-screen px
+// one frame mirrored on its own (a sheet whose frames don't all look the same way), re-measured
+function mirrorFrame(F) {
+  const { w, h } = F, d = new Uint8ClampedArray(w * h * 4), fx = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const s = y * w + x, t = y * w + w - 1 - x;
+    d.set(F.data.subarray(s * 4, s * 4 + 4), t * 4); fx[t] = F.fx[s];
+  }
+  return Object.assign(cutFrame({ d, W: w }, () => true, 0, 0, w - 1, h - 1, (x, y) => fx[y * w + x]), { x0: F.x0, y0: F.y0 });
+}
 function buildAnim(K, spec, nFrames) {
-  let fr = sliceFrames(K, nFrames, spec.detach && spec.detach.effect);
+  let fr = sliceFrames(K, nFrames, spec.detach && spec.detach.effect, spec.caption, spec.loose);
+  if (K.flip && fr.length > 1) fr.reverse();              // a left-facing sheet was mirrored: frame 1 is now on the right
+  if (spec.mirror) spec.mirror.forEach(i => { if (fr[i]) fr[i] = mirrorFrame(fr[i]); });
   if (spec.pockets) fr.forEach(F => clearPockets(F, spec.pockets));
   if (spec.use) fr = spec.use.map(i => fr[Math.min(i, fr.length - 1)]);
-  const k = spec.w ? spec.w / Math.max(...fr.map(F => F.w)) : spec.h / Math.max(...fr.map(F => F.h));
+  // scale: k (screen px per file px) when given, else the tallest frame — or frame `fit` — is h tall (or the widest is w)
+  const k = spec.k || (spec.w ? spec.w / Math.max(...fr.map(F => F.w)) : spec.h / (spec.fit != null ? fr[spec.fit].h : Math.max(...fr.map(F => F.h))));
   const mh = Math.max(...fr.map(F => F.h)), pad = Math.ceil(6 / (k * MONTAGE_MULT)) + 2; // keep frames apart after resizing
   const src = mk(fr.reduce((s, F) => s + F.w + pad, pad), mh), sg = src.getContext('2d');
   let x = pad;
@@ -1266,7 +1343,7 @@ async function loadCharacter(C) {
       const file = spec.file[fi], img = await loadImgFile([`${file}?v=${ANIM_V}`, file]);
       if (!img) continue;
       const n = Array.isArray(spec.frames) ? spec.frames[fi] : spec.frames;
-      out[name] = buildAnim(keyedFile(img, file, spec.faces || 1), spec, n); out.own[name] = true;
+      out[name] = buildAnim(keyedFile(img, file, spec.faces || 1, spec.erase), spec, n); out.own[name] = true;
       out.from[name] = `${file} (${n} frame${n > 1 ? 's' : ''}, sX ${out[name].frames.map(F => F.srcX).join('/')})`;
       return;
     }
@@ -1278,6 +1355,10 @@ async function loadCharacter(C) {
     out[name] = out[src || 'idle']; if (C.anims[name]) out.from[name] += ` → using ${src || 'idle'}`;
   }
   if (out.own.launch && out.launch.proj) out.heart = out.launch.proj; // ROMANA: the heart cut out of launch frame 3
+  if (C.portrait) { // select-screen art (keyed like the sheets, cropped to the figure)
+    const img = await loadImgFile([`${C.portrait}?v=${ANIM_V}`, C.portrait]);
+    if (img) { const K = keyedFile(img, C.portrait, 1), F = cutFrame(K, (x, y) => K.d[(y * K.W + x) * 4 + 3] > 0, 0, 0, K.W - 1, K.H - 1); out.portrait = { c: K.cv, W: K.W, H: K.H, F }; }
+  }
   out.standH = out.idle.frames[0].h;
   console.info(`${C.base} animations:\n` + Object.entries(out.from).map(([k, v]) => `  ${k}: ${v}`).join('\n'));
   return out;
@@ -1317,6 +1398,7 @@ function pickState(f) {
     }
   }
   if (!f.onGround) return { s: f.vy < -9 ? 'jumpRise' : f.vy < 6 ? 'jumpApex' : 'jumpFall' };
+  if (f.blocking) return { s: 'block' }; // fighters without block art fall back to their idle pose
   if (f.crouching) return { s: 'crouch' };
   if (f.walking) return { s: 'walk' };
   return { s: 'idle' };
@@ -1327,8 +1409,10 @@ function frameOf(f) {
   const F = A.frames[Math.min(i, A.frames.length - 1)], I = f.char.idle;
   const bob = (anim === 'idle' && f.onGround && !f.action && f.knock === 'none'
     ? Math.round(Math.sin((G.frame + f.idx * 40) * I.speed * (f.win ? 3 : 1)) * I.amp * (f.win ? 2.5 : 1)) : 0) - Math.round(A.lift || 0);
-  // with real hit-reaction art the fighter flies back upright (no rotation); a borrowed idle pose is tipped over instead
-  return { A, F, anim, pose: anim, state: st.s, bob, noRot: st.s === 'hitAir' && A !== f.spr.idle, sx: 1, sy: 1 };
+  // with real hit-reaction art the fighter flies back upright (no rotation); a borrowed idle pose is tipped over instead.
+  // Art that already lies on the ground (lieArt: LULU's KO frames) is never rotated.
+  const noRot = (st.s === 'hitAir' && A !== f.spr.idle) || (!!f.char.lieArt && st.s === 'down');
+  return { A, F, anim, pose: anim, state: st.s, bob, noRot, sx: 1, sy: 1 };
 }
 // slice the current frame out of its animation strip and draw it with the feet at (0,0); smoothing off = crisp edges
 function drawAnimFrame(g, A, F, dx = 0, dy = 0, big = false) {
@@ -1454,7 +1538,7 @@ function renderFighter(f) {
   if (a && a.type === 'special' && !f.spr.own.launch) {
     if (f.special === 'flower') drawFlowerHeld(g, R, a);
     else if (f.special === 'fire') drawFireCharge(g, R, a);           // JOE: fireball gathering in his fist
-    else if (!f.spr.projectile) drawGun(g, R, a);
+    else if (f.special === 'gun' && !f.spr.projectile) drawGun(g, R, a);
   }
   if (f.blocking) drawShield(g, R);
   g.restore();
@@ -1669,8 +1753,8 @@ function updateVictory() {
     if (w.special === 'gun') sfx.cock();
   }
   if (w.action) { w.action.t++; if (w.action.t === ATK.special.fire) fireSpecial(w); if (w.action.t >= ATK.special.total) w.action = null; }
-  for (const p of projectiles) { p.t++; p.x += p.vx; fireTrail(p); }
-  projectiles = projectiles.filter(p => p.x > -100 && p.x < STAGE_W + 100);
+  for (const p of projectiles) { p.t++; if (p.type === 'shuriken') p.dead = stepShuriken(p); else p.x += p.vx; fireTrail(p); }
+  projectiles = projectiles.filter(p => !p.dead && p.x > -100 && p.x < STAGE_W + 100);
   // 2) high leap and ground slam: crouch -> leap -> slam down -> ground break
   let h = 0, vp = null;
   if (!w.action) {
@@ -1869,8 +1953,9 @@ function specialHit(p, d) {
   const a = p.owner;
   d.hp = Math.max(0, d.hp - 10);
   d.flash = 16; d.action = null; d.stun = 0;
-  starburst(p.x, p.y, 120, p.type === 'flower' ? '#ff6a8a' : p.type === 'fire' ? '#ffb030' : '#fff6b0');
-  burst(p.x, p.y, 60, p.type === 'flower' ? ['#ff2a40', '#ff8a9a', '#ffffff', '#3aa040'] : p.type === 'fire' ? ['#fff3c0', '#ffb030', '#ff4a10', '#a00000'] : ['#ffffff', '#fff2a0', '#ff3020', '#8a0000'], 14);
+  starburst(p.x, p.y, 120, p.type === 'flower' ? '#ff6a8a' : p.type === 'fire' ? '#ffb030' : p.type === 'shuriken' ? '#7cc4ff' : '#fff6b0');
+  burst(p.x, p.y, 60, p.type === 'flower' ? ['#ff2a40', '#ff8a9a', '#ffffff', '#3aa040'] : p.type === 'fire' ? ['#fff3c0', '#ffb030', '#ff4a10', '#a00000']
+    : p.type === 'shuriken' ? ['#ffffff', '#9fd4ff', '#3a8cff', '#0a2a9a'] : ['#ffffff', '#fff2a0', '#ff3020', '#8a0000'], 14);
   popup(a.char.hitWord, d.x, d.y - FH - 70, a.char.hitColor, 50);
   popup('-10', d.x, d.y - FH * .7, '#ffdc5a', 40);
   sfx.boom(); G.hitStop = 10; shake(16, 22); // (no screen flash on special hits)
@@ -1899,6 +1984,11 @@ function fireSpecial(f) {
     const [x] = toWorld(f, [R.hF[0] + 30, 0]);
     projectiles.push({ type: 'fire', owner: f, x, y, vx: f.facing * 12.5, r: SPECIAL_HIT_R, t: 0 });
     sfx.fire();
+  } else if (f.special === 'shuriken') { // LULU: boomerang shuriken wave thrown from her launching hand (path: stepShuriken)
+    const [x] = toWorld(f, [R.hF[0] + 20, 0]), dir = f.facing;
+    const D = clamp(dir > 0 ? X_MAX + 140 - x : x - (X_MIN - 140), 260, SHURIKEN.reach); // turns back before leaving the stage
+    projectiles.push({ type: 'shuriken', owner: f, x, y, vx: dir * D * Math.PI / SHURIKEN.T, r: SPECIAL_HIT_R, t: 0, x0: x, y0: y, dir, D });
+    sfx.toss(); sfx.whoosh();
   } else {
     const ang = Math.atan2(R.hF[1] - R.elF[1], R.hF[0] - R.elF[0]);
     const [x] = toWorld(f, [R.hF[0] + Math.cos(ang) * 110, 0]); // muzzle of the big gun
@@ -1962,9 +2052,9 @@ function updateFighter(f, o, canAct) {
     a.t++;
     if (f.onGround) f.vx = 0;
     if (a.type === 'special') {
-      if (f.special === 'fire' && a.t < ATK.special.fire && a.t % 2 === 0) {
+      if ((f.special === 'fire' || f.special === 'shuriken') && a.t < ATK.special.fire && a.t % 2 === 0) { // energy gathering in the hands
         const [hx, hy] = toWorld(f, [(f.R.hF[0] + f.R.hB[0]) / 2, (f.R.hF[1] + f.R.hB[1]) / 2]);
-        particles.push({ x: hx + rand(-40, 40), y: hy + rand(-40, 40), vx: 0, vy: 0, tx: hx, ty: hy, life: 14, max: 14, size: rand(4, 8), color: '#ff7a1a', pull: true });
+        particles.push({ x: hx + rand(-40, 40), y: hy + rand(-40, 40), vx: 0, vy: 0, tx: hx, ty: hy, life: 14, max: 14, size: rand(4, 8), color: f.special === 'fire' ? '#ff7a1a' : '#5ab0ff', pull: true });
       }
       if (a.t === ATK.special.fire) fireSpecial(f);
       if (a.t >= ATK.special.total) f.action = null;
@@ -2042,12 +2132,29 @@ function separate() {
   }
 }
 
+// LULU's shuriken: flies out along the special lane (slowing as it goes), turns, climbs into a curved arc on the way
+// back and homes in on her hand wherever she is now. Returns true once she catches it.
+function stepShuriken(p) {
+  const u = p.t / SHURIKEN.T, o = p.owner, px = p.x, py = p.y;
+  let x = p.x0 + p.dir * p.D * Math.sin(Math.PI * Math.min(u, 1));
+  let y = p.y0 - SHURIKEN.rise * Math.sin(Math.PI * clamp((u - .4) / .6, 0, 1));
+  const [hx, hy] = toWorld(o, o.R ? o.R.hF : [60, -SPECIAL_LANE]), w = smooth(.62, 1, u);
+  x = lerp(x, hx, w); y = lerp(y, hy, w);
+  p.x = x; p.y = y; p.vx = x - px; // vx = this frame's step (an online guest extrapolates with it)
+  return u >= 1 || (u > .7 && Math.hypot(x - hx, y - hy) < 30);
+}
 function updateProjectiles() {
   for (const p of projectiles) {
-    p.t++; p.x += p.vx;
+    p.t++;
+    if (p.type === 'shuriken') {
+      if (stepShuriken(p)) { p.dead = true; burst(p.x, p.y, 16, ['#ffffff', '#9fd4ff', '#3a8cff'], 6); sfx.block(); continue; } // caught
+    } else p.x += p.vx;
     fireTrail(p);
     const t = fighters[1 - p.owner.idx], b = t.hurtbox();
-    if (!t.invuln && p.x + p.r > b.x1 && p.x - p.r < b.x2 && p.y + p.r > b.y1 && p.y - p.r < b.y2) { p.dead = true; specialHit(p, t); }
+    if (!p.hit && !t.invuln && p.x + p.r > b.x1 && p.x - p.r < b.x2 && p.y + p.r > b.y1 && p.y - p.r < b.y2) {
+      if (p.type === 'shuriken') p.hit = true; else p.dead = true; // the shuriken hits once and keeps flying back to Lulu
+      specialHit(p, t);
+    }
     if (p.x < -100 || p.x > STAGE_W + 100) p.dead = true;
   }
   if (projectiles.length === 2 && projectiles[0].owner !== projectiles[1].owner) {
@@ -2059,6 +2166,10 @@ function updateProjectiles() {
   projectiles = projectiles.filter(p => !p.dead);
 }
 function fireTrail(p) {
+  if (p.type === 'shuriken') { // LULU's shuriken wave: blue wisps streaming off the spinning blades
+    for (let i = 0; i < 2; i++) particles.push({ x: p.x + rand(-26, 26), y: p.y + rand(-26, 26), vx: -p.vx * rand(.05, .2), vy: rand(-.8, .8), life: rand(12, 22) | 0, max: 22, size: rand(5, 11), color: Math.random() < .5 ? '#3a8cff' : '#9fd4ff', glow: true });
+    return;
+  }
   if (p.type === 'fire') { // JOE's fireball: a stream of flames behind it
     for (let i = 0; i < 3; i++) particles.push({ x: p.x - p.vx * rand(0, 1.5), y: p.y + rand(-18, 18), vx: -p.vx * rand(.05, .2), vy: rand(-1.5, .5), life: rand(14, 26) | 0, max: 26, size: rand(6, 14), color: Math.random() < .5 ? '#ff5a10' : '#ffb030', glow: true });
     return;
@@ -2688,6 +2799,28 @@ function drawProjectiles() {
       ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, p.y, R * 1.6, 0, 7); ctx.fill();
       ctx.strokeStyle = 'rgba(255,120,30,.8)'; ctx.lineWidth = 4;
       for (let i = 0; i < 3; i++) { const ang = p.t * .4 + i * 2.1; ctx.beginPath(); ctx.arc(x, p.y, R * .9, ang, ang + 1.1); ctx.stroke(); }
+    } else if (p.type === 'shuriken') {
+      // LULU's boomerang shuriken: glowing wave ring around a spinning four-bladed blue star
+      const R = 38, spin = p.t * .55 * (p.vx < 0 ? -1 : 1);
+      const gl = ctx.createRadialGradient(x, p.y, 0, x, p.y, R * 2.3);
+      gl.addColorStop(0, 'rgba(200,235,255,.85)'); gl.addColorStop(.35, 'rgba(70,150,255,.5)'); gl.addColorStop(1, 'rgba(20,60,200,0)');
+      ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(x, p.y, R * 2.3, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(160,215,255,.75)'; ctx.lineWidth = 4;
+      for (let i = 0; i < 3; i++) { const a0 = spin * 1.4 + i * 2.1; ctx.beginPath(); ctx.arc(x, p.y, R * 1.4, a0, a0 + 1.2); ctx.stroke(); }
+      ctx.save(); ctx.globalCompositeOperation = 'source-over'; ctx.translate(x, p.y); ctx.scale(1, .82); ctx.rotate(spin);
+      const bg = ctx.createRadialGradient(0, 0, R * .1, 0, 0, R);
+      bg.addColorStop(0, '#e8f6ff'); bg.addColorStop(.45, '#4a9aff'); bg.addColorStop(1, '#0f3aa8');
+      ctx.fillStyle = bg; ctx.strokeStyle = '#0a1f5c'; ctx.lineWidth = 2.5; ctx.beginPath();
+      for (let i = 0; i < 4; i++) { // curved blades
+        const a = i * Math.PI / 2;
+        ctx.lineTo(Math.cos(a - .5) * R * .34, Math.sin(a - .5) * R * .34);
+        ctx.quadraticCurveTo(Math.cos(a - .15) * R * .8, Math.sin(a - .15) * R * .8, Math.cos(a) * R, Math.sin(a) * R);
+        ctx.quadraticCurveTo(Math.cos(a + .45) * R * .55, Math.sin(a + .45) * R * .55, Math.cos(a + 1.07) * R * .34, Math.sin(a + 1.07) * R * .34);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#0a1f5c'; ctx.beginPath(); ctx.arc(0, 0, R * .16, 0, 7); ctx.fill();   // centre hole
+      ctx.strokeStyle = '#cfeaff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, R * .26, 0, 7); ctx.stroke();
+      ctx.restore();
     } else if (p.type === 'flower' && p.owner.spr && p.owner.spr.heart) {
       // ROMANA's heart blast: the heart cut out of her launch frame 3, flying (and gently pulsing) at Moe
       const Hh = p.owner.spr.heart, dir = Math.sign(p.vx) || 1, s = 1 + .06 * Math.sin(p.t * .5);
@@ -3337,12 +3470,14 @@ function goFullscreenOnPhone() {
    ===================================================================== */
 const SEL = { open: false, mode: 'local', side: [{ i: 0, lock: false }, { i: 2, lock: false }], starting: false };
 const selEls = () => [$('selP1'), $('selP2')];
-function drawPortrait(cv, id, mirror) { // the character's idle pose, fitted into the canvas, facing the middle
+function drawPortrait(cv, id, mirror) { // the character's portrait art (or idle pose), fitted into the canvas, facing the middle
   const spr = SPRITES[id]; if (!spr) return;
-  const A = spr.idle, F = A.frames[0], g = cv.getContext('2d'), k = Math.min(cv.width * .92 / F.w, cv.height * .96 / F.h);
+  const P = spr.portrait && spr.portrait.F, A = spr.idle, F = A.frames[0], g = cv.getContext('2d');
+  const [src, sx, sy, w, h, ax] = P ? [P.c, 0, 0, P.w, P.h, P.w / 2] : [A.strip, F.sX, F.sY, F.w, F.h, F.ax];
+  const k = Math.min(cv.width * .92 / w, cv.height * .96 / h);
   g.clearRect(0, 0, cv.width, cv.height); g.save(); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
   g.translate(cv.width / 2, cv.height - 4); if (mirror) g.scale(-1, 1);
-  g.drawImage(A.strip, F.sX, F.sY, F.w, F.h, -F.ax * k, -F.h * k, F.w * k, F.h * k); g.restore();
+  g.drawImage(src, sx, sy, w, h, -ax * k, -h * k, w * k, h * k); g.restore();
 }
 function buildSelectScreen() {
   selEls().forEach((el, p) => {
@@ -3425,6 +3560,8 @@ function renderSelect() {
 const HEAD_BOX = {};   // id -> head crop in its idle frame (found once from the art)
 function headBox(id) {
   if (HEAD_BOX[id]) return HEAD_BOX[id];
+  const P = SPRITES[id].portrait, av = ROSTER[id].avatar;
+  if (P && av) return (HEAD_BOX[id] = { A: { strip: P.c }, F: { sX: 0, sY: 0 }, x: av[0] * P.W, y: av[1] * P.H, size: av[2] * P.W }); // portrait head crop
   const A = SPRITES[id].idle, F = A.frames[0], d = A.strip.getContext('2d').getImageData(F.sX, F.sY, F.w, F.h).data;
   let top = -1; for (let y = 0; y < F.h && top < 0; y++) for (let x = 0; x < F.w; x++) if (d[(y * F.w + x) * 4 + 3] > 120) { top = y; break; }
   const band = Math.max(4, Math.round(F.h * .1)); let sx = 0, n = 0;
