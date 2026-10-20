@@ -69,6 +69,7 @@
     filter:drop-shadow(0 0 calc(var(--u)*.7) rgba(255,90,0,.95)) drop-shadow(0 calc(var(--u)*.25) 0 #2a0000)}
   .vsb-side.pop .vsb-ava,.vsb-side.pop .vsb-name{animation:vsbPop .32s ease-out}
   @keyframes vsbPop{0%{transform:scale(1.25);filter:brightness(2)}100%{transform:scale(1);filter:none}}
+  #vsBanner.match{left:calc(var(--u)*9)} /* clear of the Exit button during a fight */
   #select{padding-top:calc(var(--u)*8.8)!important}
 
   /* ---------- Character select ---------- */
@@ -2802,14 +2803,16 @@ function drawOverhead(f) {
 
 /* ---------- HUD & announcer ---------- */
 function drawHUD() {
-  let gr = ctx.createLinearGradient(0, 0, 0, 110);
+  const vsb = vsBannerInMatch(), dy = vsb ? 78 : 0; // the VS banner shows the names: win pips, specials and round sit below it
+  let gr = ctx.createLinearGradient(0, 0, 0, 110 + dy);
   gr.addColorStop(0, STAGE.bg ? 'rgba(0,0,0,.5)' : 'rgba(0,0,0,.8)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); // lighter over the painted sky
-  ctx.fillStyle = gr; ctx.fillRect(0, 0, W, 110);
+  ctx.fillStyle = gr; ctx.fillRect(0, 0, W, 110 + dy);
   fighters.forEach((f, i) => {
     const left = i === 0, x = left ? 150 : W - 36; // left side leaves room for the Exit button
     ctx.save(); ctx.textAlign = left ? 'left' : 'right'; ctx.textBaseline = 'middle';
     ctx.font = '42px Impact, "Arial Black", sans-serif'; ctx.lineWidth = 5; ctx.strokeStyle = '#000'; ctx.lineJoin = 'round';
-    ctx.strokeText(f.name, x, 38); ctx.fillStyle = f.color; ctx.fillText(f.name, x, 38);
+    if (!vsb) { ctx.strokeText(f.name, x, 38); ctx.fillStyle = f.color; ctx.fillText(f.name, x, 38); }
+    ctx.translate(0, dy);
     for (let k = 0; k < 2; k++) {
       const mx = left ? x + 12 + k * 32 : x - 12 - k * 32, won = f.wins > k;
       ctx.beginPath(); ctx.arc(mx, 80, 11, 0, 7);
@@ -2826,7 +2829,7 @@ function drawHUD() {
     ctx.textAlign = 'left'; ctx.fillStyle = f.specialUsed ? '#aaa' : '#fff'; ctx.fillText(label, px + 11, 81);
     ctx.restore();
   });
-  ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.translate(0, dy);
   ctx.font = '30px Impact, "Arial Black", sans-serif'; ctx.lineWidth = 5; ctx.strokeStyle = '#000';
   ctx.strokeText(`ROUND ${G.round}`, W / 2, 34); ctx.fillStyle = '#ffd23a'; ctx.fillText(`ROUND ${G.round}`, W / 2, 34);
   ctx.font = '15px "Segoe UI", Arial, sans-serif'; ctx.fillStyle = '#ffb070'; ctx.fillText('BEST 2 OUT OF 3', W / 2, 62);
@@ -3446,10 +3449,13 @@ function updateVsBanner(ids) {
     if (pop) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); } // quick flash on change
   });
 }
-// shown over the menu and the select screen; the menu shows the current line-up, the select screen the live picks
+// shown only on the select screen (live picks) and during a fight (the chosen line-up) — never on the landing screen
+// or over the victory cinematic; in a fight it replaces the HUD's names (drawHUD moves the rest below it)
+const VSB_MATCH_PHASES = ['intro', 'countdown', 'fight', 'roundEnd'];
+const vsBannerInMatch = () => !SEL.open && VSB_MATCH_PHASES.includes(G.phase);
 function syncVsBanner() {
-  const show = !!SPRITES.moe && (SEL.open || !$('start').classList.contains('hidden'));
-  $('vsBanner').classList.toggle('hidden', !show);
+  const inMatch = vsBannerInMatch(), show = !!SPRITES.moe && (SEL.open || inMatch), el = $('vsBanner');
+  el.classList.toggle('hidden', !show); el.classList.toggle('match', inMatch);
   if (show) updateVsBanner(SEL.open ? SEL.side.map(s => ROSTER_ORDER[s.i]) : MATCH.chars);
 }
 
