@@ -49,6 +49,28 @@
   .tip b{color:#ffcf4a}
   kbd{font-family:inherit;background:#2b1408;border:1px solid #a0582a;border-radius:3px;padding:0 .35em;color:#fff}
 
+  /* ---------- Live VS banner (top of the menu and the character select) ---------- */
+  #vsBanner{position:absolute;z-index:6;top:calc(var(--u)*.6);left:calc(var(--u)*1);right:calc(var(--u)*1);height:calc(var(--u)*7.6);
+    display:flex;align-items:center;pointer-events:none;--p1:#ff3a2a;--p2:#2a8cff}
+  .vsb-side{flex:1;display:flex;align-items:center;min-width:0;--c:var(--p1)}
+  .vsb-side[data-p="1"]{--c:var(--p2);justify-content:flex-end}
+  .vsb-ava{height:calc(var(--u)*7.4);width:calc(var(--u)*7.4);flex:none;border-radius:calc(var(--u)*.6);background:radial-gradient(circle at 50% 35%,#3a1610,#0b0302);
+    border:3px solid var(--c);box-shadow:0 0 calc(var(--u)*1.2) var(--c),inset 0 0 calc(var(--u)*.8) rgba(0,0,0,.8);position:relative;z-index:1}
+  .vsb-bar{flex:1;min-width:0;display:flex;align-items:center;gap:calc(var(--u)*.8);height:calc(var(--u)*4.6);padding:0 calc(var(--u)*1.6);
+    margin-left:calc(var(--u)*-.8);background:linear-gradient(90deg,var(--c),color-mix(in srgb,var(--c) 70%,#ffcf4a) 55%,transparent);
+    clip-path:polygon(0 0,100% 0,92% 100%,0 100%);box-shadow:0 0 calc(var(--u)*1.5) var(--c)}
+  .vsb-side[data-p="1"] .vsb-bar{margin:0 calc(var(--u)*-.8) 0 0;justify-content:flex-end;
+    background:linear-gradient(270deg,var(--c),color-mix(in srgb,var(--c) 70%,#9fe8ff) 55%,transparent);clip-path:polygon(0 0,100% 0,100% 100%,8% 100%)}
+  .vsb-name{font-size:calc(var(--u)*3.4);letter-spacing:.06em;color:#fff;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    text-shadow:0 2px 0 #000,0 0 calc(var(--u)*.6) rgba(0,0,0,.9),2px 0 0 #000,-2px 0 0 #000}
+  .vsb-tag{font-size:calc(var(--u)*1.1);color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.6);padding:0 calc(var(--u)*.4);border-radius:calc(var(--u)*.25)}
+  .vsb-vs{flex:none;padding:0 calc(var(--u)*1.6);font-size:calc(var(--u)*5.6);font-style:italic;line-height:1;transform:rotate(-8deg);
+    background:linear-gradient(#fff6c0 10%,#ffd23a 40%,#ff6a10 70%,#c41a00);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 calc(var(--u)*.7) rgba(255,90,0,.95)) drop-shadow(0 calc(var(--u)*.25) 0 #2a0000)}
+  .vsb-side.pop .vsb-ava,.vsb-side.pop .vsb-name{animation:vsbPop .32s ease-out}
+  @keyframes vsbPop{0%{transform:scale(1.25);filter:brightness(2)}100%{transform:scale(1);filter:none}}
+  #select{padding-top:calc(var(--u)*8.8)!important}
+
   /* ---------- Character select ---------- */
   #select{background:radial-gradient(ellipse at center,rgba(60,8,0,.55),rgba(0,0,0,.88) 75%);justify-content:space-between;
     padding:calc(var(--u)*1.2) calc(var(--u)*1.5) calc(var(--u)*1.2);--p1:#ff4a3a;--p2:#3aa0ff}
@@ -161,8 +183,6 @@
   <button id="btnExit" class="hidden" title="Exit to menu (Esc)">✕ EXIT</button>
 
   <div id="start" class="screen">
-    <div class="title">MOE<span class="vs">·</span>JOE<span class="vs">·</span>ROMANA</div>
-    <div class="subtitle">KOMBAT ARENA</div>
     <div id="menuBtns" class="menu-row">
       <button id="btnStart" class="btn" disabled>Loading…</button>
       <button id="btnHost" class="btn alt" disabled>Host Online Game</button>
@@ -187,6 +207,13 @@
     </div>
     <div class="tip"><b>Punch + Kick</b> together = overhead jump attack &nbsp;•&nbsp; <b>Jump + Punch / Kick</b> = air attack toward the direction held<br>
       Kicks deal 2× punch damage &nbsp;•&nbsp; <b>Crouch</b> ducks punches &amp; specials &nbsp;•&nbsp; <b>Jump</b> clears kicks &amp; specials</div>
+  </div>
+
+  <!-- live VS match-up banner (menu + character select): P1 avatar & name | VS | P2 name & avatar -->
+  <div id="vsBanner" class="hidden">
+    <div class="vsb-side" data-p="0"><canvas class="vsb-ava" width="160" height="160"></canvas><div class="vsb-bar"><span class="vsb-tag">P1</span><span class="vsb-name">MOE</span></div></div>
+    <div class="vsb-vs">VS</div>
+    <div class="vsb-side" data-p="1"><div class="vsb-bar"><span class="vsb-name">ROMANA</span><span class="vsb-tag">P2</span></div><canvas class="vsb-ava" width="160" height="160"></canvas></div>
   </div>
 
   <div id="select" class="screen hidden">
@@ -3276,6 +3303,7 @@ function updateOverlays() {
   const key = NET.role + touchPlayer();
   if (show && key !== touchKey) { touchKey = key; refreshTouchLabels(); }
   if (!show) touchKey = '';
+  syncVsBanner();
 }
 document.querySelectorAll('#touch [data-act]').forEach(b => {
   const act = b.dataset.act, src = 'touch:' + act;
@@ -3372,6 +3400,7 @@ function selCheckStart() {
 // online guest: the host has fixed the line-up -> build the same fighters, snapshots take it from here
 function applyCfg(ids) { makeFighters(ids[0], ids[1]); SEL.starting = true; closeSelect(); }
 function renderSelect() {
+  syncVsBanner();
   selEls().forEach((el, p) => {
     const s = SEL.side[p], id = ROSTER_ORDER[s.i], C = ROSTER[id], mine = canControl(p);
     el.classList.toggle('locked', s.lock); el.classList.toggle('remote', !mine);
@@ -3389,6 +3418,41 @@ function renderSelect() {
   $('selStatus').textContent = SEL.starting || both ? 'GET READY!'
     : SEL.mode === 'online' && !NET.conn ? 'Connecting…' : 'Lock in both fighters to start the match';
 }
+/* ---------- live VS banner: P1 / P2 avatar + name, updated the moment a pick changes ---------- */
+const HEAD_BOX = {};   // id -> head crop in its idle frame (found once from the art)
+function headBox(id) {
+  if (HEAD_BOX[id]) return HEAD_BOX[id];
+  const A = SPRITES[id].idle, F = A.frames[0], d = A.strip.getContext('2d').getImageData(F.sX, F.sY, F.w, F.h).data;
+  let top = -1; for (let y = 0; y < F.h && top < 0; y++) for (let x = 0; x < F.w; x++) if (d[(y * F.w + x) * 4 + 3] > 120) { top = y; break; }
+  const band = Math.max(4, Math.round(F.h * .1)); let sx = 0, n = 0;
+  for (let y = top; y < top + band; y++) for (let x = 0; x < F.w; x++) if (d[(y * F.w + x) * 4 + 3] > 120) { sx += x; n++; }
+  const size = F.h * .27, cx = n ? sx / n : F.w / 2;          // head + a bit of shoulder
+  return (HEAD_BOX[id] = { A, F, x: cx - size / 2, y: Math.max(0, top - size * .08), size });
+}
+function drawAvatar(cv, id, mirror) {
+  const H = headBox(id), g = cv.getContext('2d');
+  g.clearRect(0, 0, cv.width, cv.height); g.save(); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  if (mirror) { g.translate(cv.width, 0); g.scale(-1, 1); }   // both avatars look toward the VS in the middle
+  g.drawImage(H.A.strip, H.F.sX + H.x, H.F.sY + H.y, H.size, H.size, 0, 0, cv.width, cv.height); g.restore();
+}
+const VSB = { ids: [null, null] };
+function updateVsBanner(ids) {
+  if (!SPRITES.moe) return;
+  document.querySelectorAll('#vsBanner .vsb-side').forEach((el, p) => {
+    const id = ids[p]; if (id === VSB.ids[p]) return;
+    const pop = VSB.ids[p] !== null; VSB.ids[p] = id;
+    drawAvatar(el.querySelector('.vsb-ava'), id, p === 1);
+    el.querySelector('.vsb-name').textContent = ROSTER[id].name;
+    if (pop) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); } // quick flash on change
+  });
+}
+// shown over the menu and the select screen; the menu shows the current line-up, the select screen the live picks
+function syncVsBanner() {
+  const show = !!SPRITES.moe && (SEL.open || !$('start').classList.contains('hidden'));
+  $('vsBanner').classList.toggle('hidden', !show);
+  if (show) updateVsBanner(SEL.open ? SEL.side.map(s => ROSTER_ORDER[s.i]) : MATCH.chars);
+}
+
 // keyboard on the select screen (either key set works for your own side online, like in a fight)
 addEventListener('keydown', e => {
   if (!SEL.open) return;
@@ -3404,8 +3468,13 @@ addEventListener('keydown', e => {
 /* =====================================================================
    STARTUP
    ===================================================================== */
+const START_ART_CROP = 205 / 1024; // share of the start image's height taken by its painted title bar
 loadImgFile(['Moe vs Romana_Fighting Arena.png', 'Moe vs Romana_ Fiery Battle Royale.png']).then(i3 => {
-  if (i3) $('start').style.backgroundImage = `url("${i3.src}")`;
+  if (!i3) return;
+  // the key art has a static "MOE VS ROMANA" bar painted across its top: crop it off (the live VS banner replaces it)
+  const cut = Math.round(i3.naturalHeight * START_ART_CROP), c = mk(i3.naturalWidth, i3.naturalHeight - cut);
+  c.getContext('2d').drawImage(i3, 0, cut, c.width, c.height, 0, 0, c.width, c.height);
+  c.toBlob(b => { if (b) $('start').style.backgroundImage = `url("${URL.createObjectURL(b)}")`; }, 'image/jpeg', .92);
 });
 Promise.all([loadPoses(), loadStage()]).then(([SPR]) => {
   $('btnStart').textContent = 'Forging arena…';
